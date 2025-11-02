@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 import json
 import re
 import os
+import json
 
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY") # Deep Seek API
@@ -13,6 +14,8 @@ MAX_LINES = 50 # Limit of max diff changes sent to the deepseek API to save toke
 MAX_TOKEN = 150 # Limit for token usage
 STORAGE_PATH = os.path.join(os.path.dirname(__file__), "tracked_repos.json")
 
+
+GITHUB_PAT = os.getenv("GITHUB_PAT") #github pat is needed to make requests to GitHub API
 
 class AutoPRReviewCog(commands.Cog):
     """Auto PR Review Assistant feature placeholder implementation."""
@@ -23,6 +26,25 @@ class AutoPRReviewCog(commands.Cog):
         self.load_tracked_feeds()
         self.poll_atom_feeds.start()
 
+
+    #method to get number of additions and deletions 
+    def commit_information(self, repo, commit_sha):
+        raw_response = requests.get(f"https://api.github.com/repos/Electrium-Mobility/{repo}/commits/{commit_sha}", headers={
+            'Authorization': f"token {GITHUB_PAT}",
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1521.3 Safari/537.36'
+        })
+
+        if raw_response.status_code != 200:
+            print(f"Error: {raw_response.status_code}")
+            return
+
+        parse_response = raw_response.json()
+
+        deleted_lines = parse_response["stats"]["deletions"]
+        added_lines = parse_response["stats"]["additions"]
+
+        print(f"Total Number of Deletions are {deleted_lines}.") 
+        print(f"Total Number of Additions are {added_lines}.")
 
     
     # method to remove unimportant lines from diff changes
